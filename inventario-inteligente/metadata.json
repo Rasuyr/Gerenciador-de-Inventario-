@@ -1,0 +1,7 @@
+{
+  "name": "Inventário Inteligente MZN",
+  "description": "Sistema de gestão de inventário com digitalização de registros manuais via IA, controle de compras e vendas em Meticais (MZN) e exportação para Excel.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
