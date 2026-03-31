@@ -1,0 +1,143 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Inventory item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the product" },
+        "price": { "type": "number", "description": "Current selling price in MZN" },
+        "quantity": { "type": "number", "description": "Current stock quantity" },
+        "category": { "type": "string", "description": "Product category" },
+        "costPrice": { "type": "number", "description": "Unit cost price" },
+        "totalCost": { "type": "number", "description": "Total cost of initial stock" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Registration date" },
+        "lastUpdated": { "type": "string", "format": "date-time", "description": "Last update timestamp" },
+        "ownerId": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["name", "price", "quantity", "ownerId", "costPrice", "createdAt"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Inventory purchase record",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "description": "Reference to the product" },
+        "productName": { "type": "string", "description": "Name of the product at time of purchase" },
+        "quantity": { "type": "number", "description": "Quantity purchased" },
+        "unitPrice": { "type": "number", "description": "Price per unit in MZN" },
+        "totalPrice": { "type": "number", "description": "Total purchase cost" },
+        "date": { "type": "string", "format": "date-time", "description": "Purchase date" },
+        "ownerId": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["productId", "quantity", "unitPrice", "date", "ownerId"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Sales record",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "description": "Reference to the product" },
+        "productName": { "type": "string", "description": "Name of the product at time of sale" },
+        "quantity": { "type": "number", "description": "Quantity sold" },
+        "unitPrice": { "type": "number", "description": "Price per unit in MZN" },
+        "totalPrice": { "type": "number", "description": "Total sale value" },
+        "date": { "type": "string", "format": "date-time", "description": "Sale date" },
+        "ownerId": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["productId", "quantity", "unitPrice", "date", "ownerId"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee record with permissions",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Employee name" },
+        "pin": { "type": "string", "description": "Employee PIN" },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "canViewInventory": { "type": "boolean" },
+            "canEditInventory": { "type": "boolean" },
+            "canViewSales": { "type": "boolean" },
+            "canRegisterSales": { "type": "boolean" },
+            "canEditSales": { "type": "boolean" },
+            "canViewPurchases": { "type": "boolean" },
+            "canRegisterPurchases": { "type": "boolean" },
+            "canEditPurchases": { "type": "boolean" },
+            "canViewDebts": { "type": "boolean" },
+            "canEditDebts": { "type": "boolean" },
+            "canAccessTrash": { "type": "boolean" },
+            "canExport": { "type": "boolean" },
+            "canImport": { "type": "boolean" },
+            "canScan": { "type": "boolean" }
+          }
+        },
+        "ownerId": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["name", "pin", "permissions", "ownerId"]
+    },
+    "Debt": {
+      "title": "Debt",
+      "description": "Debt record",
+      "type": "object",
+      "properties": {
+        "personName": { "type": "string", "description": "Name of the person who owes" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "productName": { "type": "string" },
+              "quantity": { "type": "number" },
+              "unitPrice": { "type": "number" },
+              "totalPrice": { "type": "number" }
+            }
+          }
+        },
+        "totalAmount": { "type": "number", "description": "Total debt amount" },
+        "date": { "type": "string", "format": "date-time", "description": "Debt date" },
+        "status": { "type": "string", "enum": ["pending", "paid"], "description": "Payment status" },
+        "ownerId": { "type": "string", "description": "User ID of the owner" }
+      },
+      "required": ["personName", "items", "totalAmount", "date", "status", "ownerId"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with owner PIN",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User UID" },
+        "ownerPin": { "type": "string", "description": "Owner security PIN" }
+      },
+      "required": ["uid", "ownerPin"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of inventory products"
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "Purchase",
+      "description": "Collection of purchase records"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Collection of sales records"
+    },
+    "/debts/{debtId}": {
+      "schema": "Debt",
+      "description": "Collection of debt records"
+    },
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Collection of employees"
+    },
+    "/userProfiles/{uid}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles"
+    }
+  }
+}

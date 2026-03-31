@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isDocOwner() {
+      return isAuthenticated() && 
+        (resource == null ? request.resource.data.ownerId == request.auth.uid : resource.data.ownerId == request.auth.uid);
+    }
+    function isAdmin() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+         (request.auth.token.email == "suhayribraimo@gmail.com" && request.auth.token.email_verified == true) ||
+         (request.auth.token.email == "skyscarlet779@gmail.com" && request.auth.token.email_verified == true));
+    }
+    function isPositive(val) {
+      return val is number && val >= 0;
+    }
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isPositive(data.price) &&
+             isPositive(data.quantity) &&
+             data.category is string &&
+             data.ownerId == request.auth.uid;
+    }
+    function isValidPurchase(data) {
+      return data.productId is string &&
+             data.productName is string &&
+             data.quantity is number && data.quantity > 0 &&
+             isPositive(data.unitPrice) &&
+             isPositive(data.sellingPrice) &&
+             isPositive(data.totalPrice) &&
+             data.date is string &&
+             data.ownerId == request.auth.uid;
+    }
+    function isValidSale(data) {
+      return data.productId is string &&
+             data.productName is string &&
+             data.quantity is number && data.quantity > 0 &&
+             isPositive(data.unitPrice) &&
+             isPositive(data.totalPrice) &&
+             data.date is string &&
+             data.ownerId == request.auth.uid;
+    }
+    function isValidEmployee(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.pin is string && data.pin.matches('^[0-9]{4,6}$') &&
+             data.permissions is map &&
+             data.ownerId == request.auth.uid;
+    }
+    function isValidUserProfile(data) {
+      return data.uid == request.auth.uid &&
+             data.ownerPin is string && data.ownerPin.matches('^[0-9]{4,6}$');
+    }
+    function isValidDebt(data) {
+      return data.personName is string && data.personName.size() > 0 && data.personName.size() < 100 &&
+             data.items is list && data.items.size() > 0 &&
+             isPositive(data.totalAmount) &&
+             data.status in ['pending', 'paid'] &&
+             data.ownerId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+    match /debts/{debtId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidDebt(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidDebt(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidProduct(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidProduct(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /trash/{trashId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if (isDocOwner() || isAdmin()) && request.resource.data.ownerId == request.auth.uid &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidPurchase(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidPurchase(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /sales/{saleId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidSale(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidSale(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidEmployee(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidEmployee(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /userProfiles/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && isValidUserProfile(request.resource.data);
+      allow update: if (isOwner(uid) || isAdmin()) && isValidUserProfile(request.resource.data) &&
+                      request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && 
+                    (resource == null ? 
+                      (!('role' in request.resource.data) || request.resource.data.role == 'user') : 
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin()));
+    }
+  }
+}
